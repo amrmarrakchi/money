@@ -24,7 +24,7 @@ export function colors() {
     expense: v('--expense'),
     grid: v('--chart-grid'),
     text: v('--chart-text'),
-    surface: v('--card'),
+    surface: v('--chart-tooltip'),
     ink: v('--foreground'),
   }
 }

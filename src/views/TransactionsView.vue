@@ -131,19 +131,11 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
 </script>
 
 <template>
-  <div class="grid gap-6">
+  <div class="grid grid-cols-1 gap-6">
     <div class="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 class="text-2xl tracking-tight">
-          Transactions
-        </h1>
-        <p class="text-sm text-muted-foreground">
-          {{ filtered.length }} transaction{{ filtered.length === 1 ? '' : 's' }}
-        </p>
-      </div>
-      <Button class="hidden md:inline-flex" @click="addTransaction()">
-        <Plus /> Add transaction
-      </Button>
+      <p class="text-sm text-muted-foreground">
+        {{ filtered.length }} transaction{{ filtered.length === 1 ? '' : 's' }}
+      </p>
     </div>
 
     <!-- Filters -->
@@ -300,7 +292,7 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
       </Card>
 
       <!-- Phones: by day -->
-      <div class="grid gap-4 md:hidden">
+      <div class="grid grid-cols-1 gap-4 md:hidden">
         <div v-for="day in days" :key="day.date">
           <div class="mb-2 px-1 text-xs text-muted-foreground">
             {{ dayLabel(day.date) }}

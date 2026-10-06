@@ -227,7 +227,7 @@ const hasData = computed(() => transactions.value.length > 0)
 </script>
 
 <template>
-  <div class="grid gap-6">
+  <div class="grid grid-cols-1 gap-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 class="text-2xl tracking-tight">
@@ -237,7 +237,7 @@ const hasData = computed(() => transactions.value.length > 0)
           Your money in {{ monthLabel(month) }}
         </p>
       </div>
-      <div class="flex items-center gap-1 rounded-lg border bg-card p-1">
+      <div class="glass-recessed flex items-center gap-1 rounded-full p-1">
         <Button variant="ghost" size="icon-sm" aria-label="Previous month" @click="month = addMonths(month, -1)">
           <ChevronLeft />
         </Button>
@@ -350,7 +350,7 @@ const hasData = computed(() => transactions.value.length > 0)
                   </span>
                   <span class="shrink-0 tabular-nums">{{ money(r.amount) }} <span class="text-muted-foreground">· {{ Math.round(r.share * 100) }} %</span></span>
                 </div>
-                <div class="h-1.5 overflow-hidden rounded-full bg-muted">
+                <div class="glass-recessed h-1.5 overflow-hidden rounded-full">
                   <div class="h-full rounded-full bg-expense" :style="{ width: `${biggest ? (r.amount / biggest) * 100 : 0}%` }" />
                 </div>
               </component>

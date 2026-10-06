@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Moon, Sun } from '@lucide/vue'
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
@@ -8,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ApiError } from '@/lib/api'
 import { login } from '@/lib/store'
-import { dark, setDark } from '@/lib/theme'
 
 const router = useRouter()
 const route = useRoute()
@@ -35,14 +33,10 @@ async function submit() {
 </script>
 
 <template>
-  <div class="relative grid min-h-dvh place-items-center bg-muted/40 p-4">
-    <Button variant="ghost" size="icon" class="absolute top-4 right-4" :aria-label="dark ? 'Light mode' : 'Dark mode'" @click="setDark(!dark)">
-      <Sun v-if="dark" />
-      <Moon v-else />
-    </Button>
-    <Card class="w-full max-w-sm">
+  <div class="relative grid min-h-dvh place-items-center p-4">
+    <Card class="glass-window w-full max-w-sm rounded-[40px] py-8">
       <CardHeader class="items-center text-center">
-        <img src="/favicon.svg" alt="" class="mx-auto mb-2 size-12">
+        <img src="/favicon.svg" alt="" class="mx-auto mb-2 size-14 rounded-2xl">
         <CardTitle class="text-2xl">
           Money
         </CardTitle>

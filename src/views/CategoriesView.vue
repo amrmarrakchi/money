@@ -83,15 +83,10 @@ async function confirmDelete() {
 </script>
 
 <template>
-  <div class="grid gap-6">
-    <div>
-      <h1 class="text-2xl tracking-tight">
-        Categories
-      </h1>
-      <p class="text-sm text-muted-foreground">
-        Group your expenses and incomes, with subcategories when you want more detail.
-      </p>
-    </div>
+  <div class="grid grid-cols-1 gap-6">
+    <p class="text-sm text-muted-foreground">
+      Group your expenses and incomes, with subcategories when you want more detail.
+    </p>
 
     <div class="grid items-start gap-6 lg:grid-cols-2">
       <Card v-for="group in groups" :key="group.type">
@@ -117,7 +112,7 @@ async function confirmDelete() {
               v-for="{ category: c, depth } in group.rows"
               :key="c.id"
               class="flex items-center gap-3 py-2.5 pr-4"
-              :class="depth ? 'bg-muted/30 pl-10' : 'pl-6'"
+              :class="depth ? 'bg-black/10 pl-10' : 'pl-6'"
             >
               <CornerDownRight v-if="depth" class="size-4 shrink-0 text-muted-foreground" />
               <span v-else class="size-3 shrink-0 rounded-full" :style="{ background: c.color }" />

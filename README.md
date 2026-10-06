@@ -47,16 +47,22 @@ The passwords are not stored: only a salted scrypt hash, in `server/api.js` ( `U
 | Categories | Expense and income categories, each with its subcategories ( one level: Transport › Fuel ). A subcategory has the type and colour of its category; it can move to another category or become a category. Number of transactions and total, a category counting its subcategories. Deleting a category deletes its subcategories, after choosing where their transactions go |
 
 A transaction can go on a category or on one of its subcategories. Adding and editing always happen in a modal: **Add** in the header ( the green button at the bottom on phones ).
-The account menu has the currency ( MAD by default ), the light / dark theme and sign out.
+The account menu has the currency ( MAD by default ) and sign out.
 
 ## Design
 
+The look of visionOS, dark only:
+- The app floats over an "environment" ( soft green, teal and violet light, `body::before` in `src/style.css` ), in glass:
+  the window ( `glass-window` ), the cards inside it ( `glass-platter` ), recessed fields for the inputs ( `glass-recessed` ),
+  thicker glass for sheets and the tab bar ( `glass-thick` ), denser glass for menus ( `glass-menu` ).
+- The pages are in a floating tab bar beside the window, which opens to show their names when pointed at; on phones it
+  floats at the bottom. Capsule buttons, pill segmented controls, large rounded corners, the window bar under the window.
 - shadcn-vue components in `src/components/ui` ( button, card, dialog, alert-dialog, input, label, select, table, tabs,
-  textarea, dropdown-menu, sonner, badge, separator ), copied from the shadcn-vue repository ( new-york-v4 ).
-- Primary colour green `#16a34a`; light and dark themes in `src/style.css`.
-- Font Flexo, weight 100 everywhere: no bold text.
-- Charts: income in green, expenses in violet ( `#4a3aa7`, `#9085e9` on dark ), a pair checked to stay distinct for
-  colour-blind people in both themes; the change against last month is written in words, not only shown in colour.
+  textarea, dropdown-menu, sonner, badge, separator ), copied from the shadcn-vue repository ( new-york-v4 ) and restyled.
+- Accent green; font Flexo, weight 100 everywhere: no bold text.
+- Charts: income in green `#22b157`, expenses in violet `#9085e9`, a pair checked against the glass to stay distinct for
+  colour-blind people; amounts in text use lighter steps of the same two colours. The change against last month is
+  written in words, not only shown in colour.
 
 ## API ( server/api.js )
 

@@ -6,64 +6,48 @@
 /* Flexo, in its light weight only: no bold anywhere */
 @font-face { font-family: "Flexo"; font-weight: 100 900; font-display: swap; src: url("/fonts/flexo.woff") format("woff"); }
 
+/*
+ * visionOS, dark only: the app floats over an "environment" ( a deep green landscape of light ), in glass.
+ * Three materials: the window ( frosted glass ), the platter ( cards: lighter glass inside the window ) and the
+ * recessed field ( inputs: darker glass, sunk into the platter ). White text, secondary text at 60 %.
+ */
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.99 0.002 150);
-  --foreground: oklch(0.2 0.01 150);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.01 150);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.01 150);
-  --primary: oklch(0.627 0.17 149.2);            /* #16a34a */
-  --primary-foreground: oklch(0.985 0.01 150);
-  --secondary: oklch(0.965 0.01 150);
-  --secondary-foreground: oklch(0.25 0.02 150);
-  --muted: oklch(0.965 0.006 150);
-  --muted-foreground: oklch(0.52 0.012 150);
-  --accent: oklch(0.955 0.025 150);
-  --accent-foreground: oklch(0.3 0.06 150);
-  --destructive: oklch(0.58 0.22 27);
-  --border: oklch(0.92 0.008 150);
-  --input: oklch(0.9 0.008 150);
-  --ring: oklch(0.627 0.17 149.2);
-  /* chart roles ( validated: green / violet pass the colour-blind checks in both modes ) */
-  --income: #16a34a;
-  --expense: #4a3aa7;
-  --chart-grid: oklch(0.92 0.006 150);
-  --chart-text: oklch(0.52 0.012 150);
-}
-
-.dark {
-  --background: oklch(0.165 0.008 150);
-  --foreground: oklch(0.95 0.006 150);
-  --card: oklch(0.2 0.009 150);
-  --card-foreground: oklch(0.95 0.006 150);
-  --popover: oklch(0.21 0.009 150);
-  --popover-foreground: oklch(0.95 0.006 150);
-  --primary: oklch(0.7 0.18 149.5);
-  --primary-foreground: oklch(0.18 0.03 150);
-  --secondary: oklch(0.26 0.01 150);
-  --secondary-foreground: oklch(0.95 0.006 150);
-  --muted: oklch(0.26 0.01 150);
-  --muted-foreground: oklch(0.7 0.012 150);
-  --accent: oklch(0.28 0.03 150);
-  --accent-foreground: oklch(0.95 0.006 150);
-  --destructive: oklch(0.65 0.2 25);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.7 0.18 149.5);
-  --income: #16a34a;
+  color-scheme: dark;
+  --radius: 1.25rem;
+  --background: oklch(0.2 0.02 170);
+  --foreground: oklch(0.98 0 0);
+  --card: rgb(255 255 255 / 0.07);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: rgb(44 52 50 / 0.72);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.66 0.17 149.5);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: rgb(255 255 255 / 0.1);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: rgb(255 255 255 / 0.08);
+  --muted-foreground: rgb(255 255 255 / 0.6);
+  --accent: rgb(255 255 255 / 0.12);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.66 0.2 25);
+  --border: rgb(255 255 255 / 0.1);
+  --input: rgb(255 255 255 / 0.08);
+  --ring: rgb(255 255 255 / 0.45);
+  /* chart roles ( validated on dark: green / violet stay distinct for colour-blind readers ) */
+  --income: #22b157;
+  --income-text: #4ade80;
+  --expense-text: #b3aaf5;
   --expense: #9085e9;
-  --chart-grid: oklch(1 0 0 / 8%);
-  --chart-text: oklch(0.7 0.012 150);
+  --chart-grid: rgb(255 255 255 / 0.08);
+  --chart-text: rgb(255 255 255 / 0.6);
+  --chart-tooltip: rgb(36 44 42 / 0.92);
 }
 
 @theme inline {
   --font-sans: "Flexo", ui-sans-serif, system-ui, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 6px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 6px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -82,16 +66,88 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-income: var(--income);
-  --color-expense: var(--expense);
+  --color-income: var(--income-text);
+  --color-expense: var(--expense-text);
+}
+
+/* The window: frosted glass with a thin light edge, lit from above */
+@utility glass-window {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.04));
+  -webkit-backdrop-filter: blur(40px) saturate(1.6);
+  backdrop-filter: blur(40px) saturate(1.6);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    inset 0 0 0 1px rgb(255 255 255 / 0.07),
+    0 30px 80px rgb(0 0 0 / 0.35);
+}
+
+/* A platter: the cards inside the window */
+@utility glass-platter {
+  background: rgb(255 255 255 / 0.06);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+
+/* A recessed field: inputs, sunk into the glass */
+@utility glass-recessed {
+  background: rgb(0 0 0 / 0.22);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.35), inset 0 -1px 0 rgb(255 255 255 / 0.06);
+}
+
+/* Menus, sheets and the tab bar: thicker glass */
+@utility glass-thick {
+  background: rgb(46 54 52 / 0.62);
+  -webkit-backdrop-filter: blur(50px) saturate(1.8);
+  backdrop-filter: blur(50px) saturate(1.8);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    0 24px 60px rgb(0 0 0 / 0.45);
+}
+
+/* Menus: denser glass, they open over other glass */
+@utility glass-menu {
+  background: rgb(36 44 42 / 0.96);
+  -webkit-backdrop-filter: blur(40px) saturate(1.6);
+  backdrop-filter: blur(40px) saturate(1.6);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    0 18px 50px rgb(0 0 0 / 0.5);
 }
 
 @layer base {
   * { @apply border-border outline-ring/50; }
-  html { color-scheme: light; }
-  html.dark { color-scheme: dark; }
-  body { @apply bg-background text-foreground antialiased; font-family: var(--font-sans); }
+  html { color-scheme: dark; }
+  body {
+    @apply text-foreground antialiased;
+    font-family: var(--font-sans);
+    min-height: 100dvh;
+    background-color: #0d1a17;
+  }
+  /* The environment: light through leaves, far behind the glass */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -10%;
+    z-index: -1;
+    background:
+      radial-gradient(40% 35% at 18% 20%, rgb(52 160 110 / 0.55), transparent 70%),
+      radial-gradient(35% 40% at 85% 15%, rgb(40 120 150 / 0.5), transparent 70%),
+      radial-gradient(45% 40% at 70% 85%, rgb(110 90 200 / 0.38), transparent 70%),
+      radial-gradient(40% 45% at 10% 90%, rgb(20 110 90 / 0.5), transparent 70%),
+      radial-gradient(30% 30% at 50% 50%, rgb(200 220 160 / 0.12), transparent 70%),
+      linear-gradient(160deg, #0e2a23, #0b1a20 50%, #161433);
+    filter: blur(20px);
+  }
+  ::selection { background: rgb(34 177 87 / 0.5); }
 }
 
 /* Weight 100 everywhere, whatever a component asks for */
 *, *::before, *::after { font-weight: 100 !important; font-synthesis: none; }
+
+/* The calendar icon of date fields, in white */
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; }

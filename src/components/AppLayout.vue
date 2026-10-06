@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ArrowLeftRight, LayoutDashboard, LogOut, Moon, Plus, Settings2, Sun, Tags } from '@lucide/vue'
-import { useRouter } from 'vue-router'
+import { ArrowLeftRight, LayoutDashboard, LogOut, Plus, Settings2, Tags } from '@lucide/vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -12,17 +13,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { addTransaction, settingsDialog } from '@/lib/dialogs'
 import { logout, state } from '@/lib/store'
-import { dark, setDark } from '@/lib/theme'
 import CategoryDialog from './CategoryDialog.vue'
 import SettingsDialog from './SettingsDialog.vue'
 import TransactionDialog from './TransactionDialog.vue'
 
 const router = useRouter()
+const route = useRoute()
 const links = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
-  { to: '/categories', label: 'Categories', icon: Tags },
+  { to: '/', name: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/transactions', name: 'transactions', label: 'Transactions', icon: ArrowLeftRight },
+  { to: '/categories', name: 'categories', label: 'Categories', icon: Tags },
 ]
+const title = computed(() => String(route.meta.title ?? ''))
 
 function signOut() {
   logout()
@@ -31,41 +33,51 @@ function signOut() {
 </script>
 
 <template>
-  <div class="min-h-dvh pb-20 md:pb-0">
-    <header class="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
-      <div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
-        <RouterLink to="/" class="flex items-center gap-2.5">
-          <img src="/favicon.svg" alt="" class="size-8">
-          <span class="text-lg tracking-tight">Money</span>
-        </RouterLink>
+  <div class="min-h-dvh px-2 pt-2 pb-28 sm:px-6 sm:pt-6 md:pb-10 md:pl-28">
+    <!-- The tab bar: an ornament beside the window, it opens to show the names when pointed at -->
+    <nav
+      class="group/tabs glass-thick fixed top-1/2 left-5 z-40 hidden -translate-y-1/2 flex-col gap-1 rounded-[32px] p-2 transition-[width] duration-300 hover:w-52 md:flex md:w-[60px]"
+      aria-label="Pages"
+    >
+      <RouterLink
+        v-for="link in links"
+        :key="link.to"
+        :to="link.to"
+        class="flex h-11 items-center gap-3 overflow-hidden rounded-full px-[11px] text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+        exact-active-class="!bg-white/20 !text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.2)]"
+        :aria-label="link.label"
+      >
+        <component :is="link.icon" class="size-5 shrink-0" />
+        <span class="whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover/tabs:opacity-100">{{ link.label }}</span>
+      </RouterLink>
+    </nav>
 
-        <nav class="ml-4 hidden items-center gap-1 md:flex">
-          <RouterLink
-            v-for="link in links"
-            :key="link.to"
-            :to="link.to"
-            class="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            exact-active-class="!bg-accent !text-accent-foreground"
-          >
-            {{ link.label }}
-          </RouterLink>
-        </nav>
-
+    <!-- The window -->
+    <div class="glass-window relative mx-auto max-w-6xl rounded-[32px] sm:rounded-[44px]">
+      <header class="flex items-center gap-3 px-4 pt-4 pb-1 sm:px-8 sm:pt-6">
+        <img src="/favicon.svg" alt="" class="size-9 rounded-xl">
+        <div class="min-w-0">
+          <div class="text-xs text-white/60">
+            Money
+          </div>
+          <div class="truncate text-lg leading-tight">
+            {{ title }}
+          </div>
+        </div>
         <div class="ml-auto flex items-center gap-2">
-          <Button class="hidden md:inline-flex" @click="addTransaction()">
+          <Button class="hidden sm:inline-flex" @click="addTransaction()">
             <Plus /> Add
           </Button>
-          <Button variant="ghost" size="icon" :aria-label="dark ? 'Light mode' : 'Dark mode'" @click="setDark(!dark)">
-            <Sun v-if="dark" />
-            <Moon v-else />
+          <Button size="icon" class="sm:hidden" aria-label="Add" @click="addTransaction()">
+            <Plus />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
-              <Button variant="outline" size="icon" class="rounded-full" aria-label="Account">
+              <Button variant="secondary" size="icon" aria-label="Account">
                 {{ state.user?.name.charAt(0) }}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" class="w-48">
+            <DropdownMenuContent align="end" class="w-52">
               <DropdownMenuLabel>
                 {{ state.user?.name }}
                 <div class="text-xs text-muted-foreground">
@@ -76,46 +88,32 @@ function signOut() {
               <DropdownMenuItem @select="settingsDialog.open = true">
                 <Settings2 /> Settings
               </DropdownMenuItem>
-              <DropdownMenuItem @select="setDark(!dark)">
-                <Sun v-if="dark" /><Moon v-else /> {{ dark ? 'Light mode' : 'Dark mode' }}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem @select="signOut">
                 <LogOut /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <main class="mx-auto max-w-6xl px-4 py-6">
-      <RouterView />
-    </main>
+      <main class="px-3 pt-4 pb-5 sm:px-8 sm:pb-8">
+        <RouterView />
+      </main>
+    </div>
+    <!-- The window bar, under the window -->
+    <div class="mx-auto mt-3 hidden h-1.5 w-28 rounded-full bg-white/25 md:block" aria-hidden="true" />
 
-    <!-- Phones: the pages at the bottom, the add button in the middle -->
-    <nav class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+    <!-- Phones: the tab bar floats at the bottom -->
+    <nav class="glass-thick fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 grid grid-cols-3 gap-1 rounded-full p-1.5 md:hidden" aria-label="Pages">
       <RouterLink
-        v-for="link in links.slice(0, 2)"
+        v-for="link in links"
         :key="link.to"
         :to="link.to"
-        class="flex flex-col items-center gap-1 py-2.5 text-[11px] text-muted-foreground"
-        exact-active-class="!text-primary"
+        class="flex flex-col items-center gap-0.5 rounded-full py-2 text-[11px] text-white/65"
+        exact-active-class="!bg-white/18 !text-white"
       >
         <component :is="link.icon" class="size-5" />
         {{ link.label }}
-      </RouterLink>
-      <button class="flex flex-col items-center gap-1 py-2.5 text-[11px] text-primary" @click="addTransaction()">
-        <span class="-mt-6 grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg"><Plus class="size-5" /></span>
-        Add
-      </button>
-      <RouterLink
-        :to="links[2].to"
-        class="flex flex-col items-center gap-1 py-2.5 text-[11px] text-muted-foreground"
-        exact-active-class="!text-primary"
-      >
-        <Tags class="size-5" />
-        {{ links[2].label }}
       </RouterLink>
     </nav>
 
