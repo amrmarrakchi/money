@@ -6,19 +6,20 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { transactionDialog as dialog } from '@/lib/dialogs'
 import { showError } from '@/lib/errors'
 import { today } from '@/lib/format'
-import { categories, currency, saveTransaction } from '@/lib/store'
+import { categoryPath, categoryTree, currency, saveTransaction } from '@/lib/store'
 
 const form = reactive({ type: 'expense' as Kind, amount: '', categoryId: '', date: today(), note: '' })
 const saving = ref(false)
 const error = ref('')
 
-const options = computed(() => categories.value.filter(c => c.type === form.type).sort((a, b) => a.name.localeCompare(b.name)))
+// Each category followed by its subcategories: a transaction can go on either
+const options = computed(() => categoryTree(form.type))
 
 // Filled each time the modal opens
 watch(() => dialog.open, (open) => {
@@ -32,7 +33,7 @@ watch(() => dialog.open, (open) => {
 
 // Another type: the category must change too
 watch(() => form.type, () => {
-  if (!options.value.some(c => c.id === form.categoryId)) form.categoryId = ''
+  if (!options.value.some(o => o.category.id === form.categoryId)) form.categoryId = ''
 })
 
 async function submit() {
@@ -87,12 +88,14 @@ async function submit() {
             <Label>Category</Label>
             <Select v-model="form.categoryId">
               <SelectTrigger class="w-full">
-                <SelectValue placeholder="Choose" />
+                <span v-if="form.categoryId" class="truncate">{{ categoryPath(form.categoryId) }}</span>
+                <span v-else class="text-muted-foreground">Choose</span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="c in options" :key="c.id" :value="c.id">
-                  <span class="size-2.5 rounded-full" :style="{ background: c.color }" />
-                  {{ c.name }}
+                <SelectItem v-for="o in options" :key="o.category.id" :value="o.category.id" :class="o.depth ? 'pl-7' : ''">
+                  <span v-if="!o.depth" class="size-2.5 rounded-full" :style="{ background: o.category.color }" />
+                  <span v-else class="text-muted-foreground">›</span>
+                  {{ o.category.name }}
                 </SelectItem>
               </SelectContent>
             </Select>

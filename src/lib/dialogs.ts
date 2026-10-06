@@ -20,21 +20,31 @@ export function editTransaction(t: Transaction) {
   transactionDialog.open = true
 }
 
-export const categoryDialog = reactive<{ open: boolean, editing: Category | null, type: Kind }>({
+export const categoryDialog = reactive<{ open: boolean, editing: Category | null, type: Kind, parentId: string | null }>({
   open: false,
   editing: null,
   type: 'expense',
+  parentId: null,
 })
 
 export function addCategory(type: Kind) {
   categoryDialog.editing = null
   categoryDialog.type = type
+  categoryDialog.parentId = null
+  categoryDialog.open = true
+}
+
+export function addSubcategory(parent: Category) {
+  categoryDialog.editing = null
+  categoryDialog.type = parent.type
+  categoryDialog.parentId = parent.id
   categoryDialog.open = true
 }
 
 export function editCategory(c: Category) {
   categoryDialog.editing = c
   categoryDialog.type = c.type
+  categoryDialog.parentId = c.parentId ?? null
   categoryDialog.open = true
 }
 

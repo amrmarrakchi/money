@@ -108,15 +108,30 @@ function cleanTransaction(body, data) {
   return { type, amount, categoryId: category.id, date: body.date, note: String(body.note || '').trim().slice(0, 200) }
 }
 
+// Two levels: a category, or a subcategory of a category. A subcategory has the type and colour of its parent
 function cleanCategory(body, data, id) {
-  const type = body.type
+  let type = body.type
   if (type !== 'expense' && type !== 'income') throw new HttpError(400, 'Type must be expense or income')
   const name = String(body.name || '').trim().slice(0, 40)
   if (!name) throw new HttpError(400, 'Enter a name')
-  if (data.categories.some(c => c.id !== id && c.type === type && c.name.toLowerCase() === name.toLowerCase()))
-    throw new HttpError(409, `There is already an ${type} category called ${name}`)
-  const color = COLOR.test(String(body.color)) ? body.color : '#71717a'
-  return { type, name, color }
+  let parentId = body.parentId || null
+  let color = COLOR.test(String(body.color)) ? body.color : '#71717a'
+  if (parentId) {
+    const parent = data.categories.find(c => c.id === parentId)
+    if (!parent || parent.id === id) throw new HttpError(400, 'Choose another parent category')
+    if (parent.parentId) throw new HttpError(400, 'A subcategory cannot have subcategories')
+    if (id && data.categories.some(c => c.parentId === id)) throw new HttpError(409, 'This category has subcategories: it cannot become a subcategory')
+    type = parent.type
+    color = parent.color
+  }
+  if (data.categories.some(c => c.id !== id && c.type === type && (c.parentId || null) === parentId && c.name.toLowerCase() === name.toLowerCase()))
+    throw new HttpError(409, `There is already ${parentId ? 'a subcategory' : `an ${type} category`} called ${name} here`)
+  return { type, name, color, parentId }
+}
+
+// A category and its subcategories
+function family(data, id) {
+  return [id, ...data.categories.filter(c => c.parentId === id).map(c => c.id)]
 }
 
 // ---------------------------------------------------------------- routes
@@ -175,25 +190,30 @@ function route(method, url, user, body) {
     }
     const index = data.categories.findIndex(c => c.id === id)
     if (index < 0) throw new HttpError(404, 'This category no longer exists')
-    const used = data.transactions.filter(t => t.categoryId === id).length
+    const ids = family(data, id)
+    const used = data.transactions.filter(t => ids.includes(t.categoryId)).length
     if (method === 'PUT') {
       const next = cleanCategory(body, data, id)
-      if (used && next.type !== data.categories[index].type)
-        throw new HttpError(409, 'This category has transactions: its type cannot change')
+      if (next.type !== data.categories[index].type) {
+        if (used) throw new HttpError(409, 'This category has transactions: its type cannot change')
+        if (ids.length > 1) throw new HttpError(409, 'This category has subcategories: its type cannot change')
+      }
       data.categories[index] = { ...data.categories[index], ...next }
+      // The subcategories follow the colour of their parent
+      for (const c of data.categories) if (c.parentId === id) c.color = next.color
       save(user, data)
       return data.categories[index]
     }
     if (method === 'DELETE') {
-      // Its transactions can move to another category of the same type, else the category must be empty
+      // Its subcategories go with it; their transactions move to another category of the same type
       if (used) {
-        const target = data.categories.find(c => c.id === body.moveTo && c.id !== id && c.type === data.categories[index].type)
+        const target = data.categories.find(c => c.id === body.moveTo && !ids.includes(c.id) && c.type === data.categories[index].type)
         if (!target) throw new HttpError(409, `This category has ${used} transaction${used > 1 ? 's' : ''}: choose where to move them`)
-        for (const t of data.transactions) if (t.categoryId === id) t.categoryId = target.id
+        for (const t of data.transactions) if (ids.includes(t.categoryId)) t.categoryId = target.id
       }
-      data.categories.splice(index, 1)
+      data.categories = data.categories.filter(c => !ids.includes(c.id))
       save(user, data)
-      return { deleted: id }
+      return { deleted: ids }
     }
   }
 

@@ -1,6 +1,6 @@
 # Money
 
-A simple, personal expense tracker: expenses and incomes, their categories, filters, and a dashboard with charts.
+A simple, personal expense tracker: expenses and incomes, their categories and subcategories, filters, and a dashboard with charts.
 Two accounts, each with its own data. Vue 3 + Vite, shadcn-vue ( Reka UI + Tailwind CSS 4 ), Chart.js.
 
 ## Start
@@ -42,11 +42,11 @@ The passwords are not stored: only a salted scrypt hash, in `server/api.js` ( `U
 
 | Page | What it does |
 | --- | --- |
-| Dashboard | The month in four figures ( income, expenses, net, savings rate, each against last month ); income and expenses over the last 12 months; where the money went ( expenses by category, ranked, with % ); spending pace ( spent so far this month, day by day, against last month ); savings over time; the latest transactions. The arrows change the month. Each chart can be shown as a table |
-| Transactions | Search ( note, category, amount ), filters by type, one or more categories and period ( this month, last month, last 3 months, this year, all, custom dates ); totals of what is shown; a table on wide screens, a list by day on phones. Edit and delete; deleting asks first |
-| Categories | Expense and income categories, with their colour, number of transactions and total. A category with transactions can be deleted after choosing where its transactions go |
+| Dashboard | The month in four figures ( income, expenses, net, savings rate, each against last month ); income and expenses over the last 12 months; where the money went ( expenses by category, ranked, with % ; a category opens to show its subcategories ); spending pace ( spent so far this month, day by day, against last month ); savings over time; the latest transactions. The arrows change the month. Each chart can be shown as a table |
+| Transactions | Search ( note, category, amount ), filters by type, one or more categories ( a category takes its subcategories with it ) and period ( this month, last month, last 3 months, this year, all, custom dates ); totals of what is shown; a table on wide screens, a list by day on phones. Edit and delete; deleting asks first |
+| Categories | Expense and income categories, each with its subcategories ( one level: Transport › Fuel ). A subcategory has the type and colour of its category; it can move to another category or become a category. Number of transactions and total, a category counting its subcategories. Deleting a category deletes its subcategories, after choosing where their transactions go |
 
-Adding and editing always happen in a modal: **Add** in the header ( the green button at the bottom on phones ).
+A transaction can go on a category or on one of its subcategories. Adding and editing always happen in a modal: **Add** in the header ( the green button at the bottom on phones ).
 The account menu has the currency ( MAD by default ), the light / dark theme and sign out.
 
 ## Design
@@ -65,7 +65,7 @@ The account menu has the currency ( MAD by default ), the light / dark theme and
 | POST | `/api/login` | `{ username, password }` | `{ token, user }` |
 | GET | `/api/me` · `/api/data` | | the user · `{ settings, categories, transactions }` |
 | POST · PUT · DELETE | `/api/transactions` · `/api/transactions/:id` | `{ type, amount, categoryId, date, note }` | the transaction |
-| POST · PUT · DELETE | `/api/categories` · `/api/categories/:id` | `{ type, name, color }` · DELETE `{ moveTo }` | the category |
+| POST · PUT · DELETE | `/api/categories` · `/api/categories/:id` | `{ type, name, color, parentId }` · DELETE `{ moveTo }` | the category ( `parentId`: a subcategory ) |
 | PUT | `/api/settings` | `{ currency }` | the settings |
 
 Every call but the sign-in needs `Authorization: Bearer <token>`.

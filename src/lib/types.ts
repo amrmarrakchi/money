@@ -5,6 +5,7 @@ export interface Category {
   type: Kind
   name: string
   color: string
+  parentId?: string | null // a subcategory: the id of its category
 }
 
 export interface Transaction {

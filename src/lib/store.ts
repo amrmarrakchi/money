@@ -1,5 +1,5 @@
 // The signed-in user and their data, shared by every page
-import type { Category, Settings, Transaction, User, UserData } from './types'
+import type { Category, Kind, Settings, Transaction, User, UserData } from './types'
 import { computed, reactive } from 'vue'
 import { api, ApiError, getToken, setToken } from './api'
 
@@ -15,6 +15,50 @@ export const categories = computed(() => state.data?.categories ?? [])
 export const transactions = computed(() => state.data?.transactions ?? [])
 export const currency = computed(() => state.data?.settings.currency ?? 'MAD')
 export const categoryById = computed(() => new Map(categories.value.map(c => [c.id, c])))
+
+// ---------------------------------------------------------------- categories and subcategories ( two levels )
+export const childrenOf = computed(() => {
+  const map = new Map<string, Category[]>()
+  for (const c of categories.value) {
+    if (!c.parentId) continue
+    const list = map.get(c.parentId) ?? []
+    list.push(c)
+    map.set(c.parentId, list)
+  }
+  for (const list of map.values()) list.sort((a, b) => a.name.localeCompare(b.name))
+  return map
+})
+
+// Categories in order, each followed by its subcategories: for the lists and the menus
+export function categoryTree(type?: Kind | 'all') {
+  const rows: { category: Category, depth: 0 | 1 }[] = []
+  const tops = categories.value
+    .filter(c => !c.parentId && (!type || type === 'all' || c.type === type))
+    .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
+  for (const top of tops) {
+    rows.push({ category: top, depth: 0 })
+    for (const sub of childrenOf.value.get(top.id) ?? []) rows.push({ category: sub, depth: 1 })
+  }
+  return rows
+}
+
+// "Transport › Fuel"
+export function categoryPath(id: string) {
+  const c = categoryById.value.get(id)
+  if (!c) return '—'
+  const parent = c.parentId ? categoryById.value.get(c.parentId) : undefined
+  return parent ? `${parent.name} › ${c.name}` : c.name
+}
+
+// The main category of a category ( itself, or its parent )
+export function topCategoryId(id: string) {
+  return categoryById.value.get(id)?.parentId || id
+}
+
+// A category with its subcategories
+export function familyOf(id: string) {
+  return [id, ...(childrenOf.value.get(id) ?? []).map(c => c.id)]
+}
 
 export async function login(username: string, password: string) {
   const res = await api<{ token: string, user: User }>('POST', 'login', { username, password })
@@ -67,21 +111,17 @@ export async function deleteTransaction(id: string) {
   list.splice(list.findIndex(t => t.id === id), 1)
 }
 
+// A change of category can touch its subcategories ( colour ) and transactions: the data is read again after it
 export async function saveCategory(input: CategoryInput, id?: string) {
   const saved = await api<Category>(id ? 'PUT' : 'POST', id ? `categories/${id}` : 'categories', input)
-  const list = state.data!.categories
-  const index = list.findIndex(c => c.id === saved.id)
-  if (index >= 0) list[index] = saved
-  else list.push(saved)
+  await loadData()
   return saved
 }
 
-// moveTo: the category that receives its transactions
+// Its subcategories go with it; moveTo: the category that receives their transactions
 export async function deleteCategory(id: string, moveTo?: string) {
   await api('DELETE', `categories/${id}`, { moveTo })
-  if (moveTo) for (const t of state.data!.transactions) if (t.categoryId === id) t.categoryId = moveTo
-  const list = state.data!.categories
-  list.splice(list.findIndex(c => c.id === id), 1)
+  await loadData()
 }
 
 export async function saveSettings(settings: Settings) {

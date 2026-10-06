@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { addTransaction, editTransaction } from '@/lib/dialogs'
 import { showError } from '@/lib/errors'
 import { addMonths, isoDate, money, monthKey, shortDate, today } from '@/lib/format'
-import { categories, categoryById, deleteTransaction, transactions } from '@/lib/store'
+import { categoryById, categoryPath, categoryTree, deleteTransaction, familyOf, transactions } from '@/lib/store'
 
 type Period = 'all' | 'this-month' | 'last-month' | 'last-3' | 'this-year' | 'custom'
 
@@ -36,20 +36,19 @@ try {
 catch {}
 watch(filters, () => { try { sessionStorage.setItem('money-filters', JSON.stringify(filters)) } catch {} })
 
-const categoryOptions = computed(() => categories.value
-  .filter(c => filters.type === 'all' || c.type === filters.type)
-  .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name)))
+// Each category followed by its subcategories
+const categoryOptions = computed(() => categoryTree(filters.type as 'all'))
 
 // Another type: only its categories stay chosen
 watch(() => filters.type, () => {
-  filters.categories = filters.categories.filter(id => categoryOptions.value.some(c => c.id === id))
+  filters.categories = filters.categories.filter(id => categoryOptions.value.some(o => o.category.id === id))
 })
 
 // Several categories can be chosen: the button says how many
 const chosen = computed(() => filters.categories.map(id => categoryById.value.get(id)).filter(c => !!c))
 const categoryLabel = computed(() => {
   if (!chosen.value.length) return 'All categories'
-  if (chosen.value.length === 1) return chosen.value[0]!.name
+  if (chosen.value.length === 1) return categoryPath(chosen.value[0]!.id)
   return `${chosen.value.length} categories`
 })
 function removeCategory(id: string) {
@@ -69,14 +68,17 @@ const range = computed<[string, string]>(() => {
   }
 })
 
+// A chosen category takes its subcategories with it
+const chosenIds = computed(() => new Set(filters.categories.flatMap(id => familyOf(id))))
+
 const filtered = computed(() => {
   const q = filters.search.trim().toLowerCase()
   const [from, to] = range.value
   return transactions.value
     .filter(t => t.date >= from && t.date <= to)
     .filter(t => filters.type === 'all' || t.type === filters.type)
-    .filter(t => !filters.categories.length || filters.categories.includes(t.categoryId))
-    .filter(t => !q || t.note.toLowerCase().includes(q) || (categoryById.value.get(t.categoryId)?.name.toLowerCase().includes(q)) || String(t.amount).includes(q))
+    .filter(t => !filters.categories.length || chosenIds.value.has(t.categoryId))
+    .filter(t => !q || t.note.toLowerCase().includes(q) || categoryPath(t.categoryId).toLowerCase().includes(q) || String(t.amount).includes(q))
     .sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
 })
 
@@ -178,9 +180,10 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
                 Clear
               </button>
             </div>
-            <SelectItem v-for="c in categoryOptions" :key="c.id" :value="c.id">
-              <span class="size-2.5 rounded-full" :style="{ background: c.color }" />
-              {{ c.name }}<span v-if="filters.type === 'all'" class="text-muted-foreground">· {{ c.type }}</span>
+            <SelectItem v-for="o in categoryOptions" :key="o.category.id" :value="o.category.id" :class="o.depth ? 'pl-7' : ''">
+              <span v-if="!o.depth" class="size-2.5 rounded-full" :style="{ background: o.category.color }" />
+              <span v-else class="text-muted-foreground">›</span>
+              {{ o.category.name }}<span v-if="filters.type === 'all' && !o.depth" class="text-muted-foreground">· {{ o.category.type }}</span>
             </SelectItem>
           </SelectContent>
         </Select>
@@ -210,7 +213,7 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
         <div v-if="chosen.length > 1" class="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-5">
           <span v-for="c in chosen" :key="c!.id" class="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 py-1 pr-1 pl-2.5 text-xs">
             <span class="size-2 rounded-full" :style="{ background: c!.color }" />
-            {{ c!.name }}
+            {{ categoryPath(c!.id) }}
             <button type="button" class="grid size-5 place-items-center rounded-full hover:bg-accent" :aria-label="`Remove ${c!.name}`" @click="removeCategory(c!.id)">
               <X class="size-3" />
             </button>
@@ -274,7 +277,7 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
               <TableCell>
                 <span class="inline-flex items-center gap-2">
                   <span class="size-2.5 rounded-full" :style="{ background: categoryById.get(t.categoryId)?.color }" />
-                  {{ categoryById.get(t.categoryId)?.name ?? '—' }}
+                  {{ categoryPath(t.categoryId) }}
                 </span>
               </TableCell>
               <TableCell class="max-w-72 truncate text-muted-foreground">
@@ -306,7 +309,7 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
             <div v-for="t in day.items" :key="t.id" class="flex items-center gap-3 px-4 py-3">
               <span class="size-2.5 shrink-0 rounded-full" :style="{ background: categoryById.get(t.categoryId)?.color }" />
               <button class="min-w-0 flex-1 text-left" @click="editTransaction(t)">
-                <div class="truncate">{{ categoryById.get(t.categoryId)?.name ?? '—' }}</div>
+                <div class="truncate">{{ categoryPath(t.categoryId) }}</div>
                 <div v-if="t.note" class="truncate text-xs text-muted-foreground">{{ t.note }}</div>
               </button>
               <div class="tabular-nums whitespace-nowrap" :class="t.type === 'income' ? 'text-income' : ''">
@@ -330,7 +333,7 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
     <ConfirmDialog
       v-model:open="confirmOpen"
       title="Delete this transaction?"
-      :description="toDelete ? `${categoryById.get(toDelete.categoryId)?.name ?? ''}, ${money(toDelete.amount)} on ${shortDate(toDelete.date)}. This cannot be undone.` : ''"
+      :description="toDelete ? `${categoryPath(toDelete.categoryId)}, ${money(toDelete.amount)} on ${shortDate(toDelete.date)}. This cannot be undone.` : ''"
       @confirm="confirmDelete"
     />
   </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Kind } from '@/lib/types'
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Plus } from '@lucide/vue'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Plus } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { Bar, Line } from 'vue-chartjs'
 import ChartCard from '@/components/ChartCard.vue'
@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { baseOptions, colors } from '@/lib/charts'
 import { addTransaction, editTransaction } from '@/lib/dialogs'
 import { addMonths, money, monthKey, monthLabel, shortDate, today } from '@/lib/format'
-import { categoryById, currency, state, transactions } from '@/lib/store'
+import { categoryById, categoryPath, currency, state, topCategoryId, transactions } from '@/lib/store'
 import { dark } from '@/lib/theme'
 
 const thisMonth = monthKey(today())
@@ -85,20 +85,54 @@ const monthlyChart = computed(() => {
 })
 
 // ---------------------------------------------------------------- expenses by category, this month
+// Each main category with its subcategories added in; the split by subcategory opens under it
+interface Part { id: string, name: string, amount: number, share: number }
+interface Row extends Part { color: string, parts: Part[] }
+
 const byCategory = computed(() => {
-  const map = new Map<string, number>()
-  for (const t of transactions.value)
-    if (t.type === 'expense' && monthKey(t.date) === month.value) map.set(t.categoryId, (map.get(t.categoryId) ?? 0) + t.amount)
-  const total = [...map.values()].reduce((a, b) => a + b, 0)
-  const rows = [...map.entries()]
-    .map(([id, amount]) => ({ id, name: categoryById.value.get(id)?.name ?? '—', color: categoryById.value.get(id)?.color ?? '#71717a', amount }))
-    .sort((a, b) => b.amount - a.amount)
+  const tops = new Map<string, Map<string, number>>()
+  for (const t of transactions.value) {
+    if (t.type !== 'expense' || monthKey(t.date) !== month.value) continue
+    const top = topCategoryId(t.categoryId)
+    const parts = tops.get(top) ?? new Map<string, number>()
+    parts.set(t.categoryId, (parts.get(t.categoryId) ?? 0) + t.amount)
+    tops.set(top, parts)
+  }
+  let total = 0
+  for (const parts of tops.values()) for (const v of parts.values()) total += v
+  const rows: Row[] = [...tops.entries()].map(([id, parts]) => {
+    const amount = [...parts.values()].reduce((x, y) => x + y, 0)
+    const category = categoryById.value.get(id)
+    const hasSubs = [...parts.keys()].some(k => k !== id)
+    return {
+      id,
+      name: category?.name ?? '—',
+      color: category?.color ?? '#71717a',
+      amount,
+      share: total ? amount / total : 0,
+      // Spent on the category itself, next to its subcategories: "Transport ( other )"
+      parts: hasSubs
+        ? [...parts.entries()]
+            .map(([pid, v]) => ({ id: pid, name: pid === id ? `${category?.name ?? '—'} ( other )` : categoryById.value.get(pid)?.name ?? '—', amount: v, share: amount ? v / amount : 0 }))
+            .sort((x, y) => y.amount - x.amount)
+        : [],
+    }
+  }).sort((x, y) => y.amount - x.amount)
   // Seven categories at most, the rest together
   const top = rows.slice(0, 7)
   const rest = rows.slice(7)
-  if (rest.length) top.push({ id: 'other', name: `${rest.length} other categories`, color: '#71717a', amount: rest.reduce((a, r) => a + r.amount, 0) })
-  return { total, rows: top.map(r => ({ ...r, share: total ? r.amount / total : 0 })) }
+  if (rest.length) {
+    const amount = rest.reduce((x, r) => x + r.amount, 0)
+    top.push({ id: 'other', name: `${rest.length} other categories`, color: '#71717a', amount, share: total ? amount / total : 0, parts: [] })
+  }
+  return { total, rows: top }
 })
+const open = ref(new Set<string>())
+function toggle(id: string) {
+  const next = new Set(open.value)
+  next.has(id) ? next.delete(id) : next.add(id)
+  open.value = next
+}
 const biggest = computed(() => byCategory.value.rows[0]?.amount ?? 0)
 
 // ---------------------------------------------------------------- spending pace: this month against last month
@@ -295,22 +329,38 @@ const hasData = computed(() => transactions.value.length > 0)
         </ChartCard>
 
         <!-- A ranked list with its bars: the names and amounts stay readable on a phone -->
-        <ChartCard class="lg:col-span-2" title="Where the money went" :description="`Expenses by category in ${monthLabel(month)}`">
+        <ChartCard class="lg:col-span-2" title="Where the money went" :description="`Expenses by category in ${monthLabel(month)}${byCategory.rows.some(r => r.parts.length) ? ', open one for its subcategories' : ''}`">
           <p v-if="!byCategory.rows.length" class="py-8 text-center text-sm text-muted-foreground">
             No expense this month.
           </p>
           <ul v-else class="grid gap-3">
             <li v-for="r in byCategory.rows" :key="r.id" class="grid gap-1.5">
-              <div class="flex items-baseline justify-between gap-3 text-sm">
-                <span class="flex min-w-0 items-center gap-2">
-                  <span class="size-2.5 shrink-0 rounded-full" :style="{ background: r.color }" />
-                  <span class="truncate">{{ r.name }}</span>
-                </span>
-                <span class="shrink-0 tabular-nums">{{ money(r.amount) }} <span class="text-muted-foreground">· {{ Math.round(r.share * 100) }} %</span></span>
-              </div>
-              <div class="h-1.5 overflow-hidden rounded-full bg-muted">
-                <div class="h-full rounded-full bg-expense" :style="{ width: `${biggest ? (r.amount / biggest) * 100 : 0}%` }" />
-              </div>
+              <component
+                :is="r.parts.length ? 'button' : 'div'"
+                class="grid gap-1.5 text-left"
+                :class="r.parts.length ? '-mx-2 rounded-md px-2 py-1 hover:bg-accent' : ''"
+                :aria-expanded="r.parts.length ? open.has(r.id) : undefined"
+                @click="r.parts.length && toggle(r.id)"
+              >
+                <div class="flex items-baseline justify-between gap-3 text-sm">
+                  <span class="flex min-w-0 items-center gap-2">
+                    <span class="size-2.5 shrink-0 rounded-full" :style="{ background: r.color }" />
+                    <span class="truncate">{{ r.name }}</span>
+                    <ChevronDown v-if="r.parts.length" class="size-3.5 shrink-0 text-muted-foreground transition-transform" :class="open.has(r.id) ? 'rotate-180' : ''" />
+                  </span>
+                  <span class="shrink-0 tabular-nums">{{ money(r.amount) }} <span class="text-muted-foreground">· {{ Math.round(r.share * 100) }} %</span></span>
+                </div>
+                <div class="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div class="h-full rounded-full bg-expense" :style="{ width: `${biggest ? (r.amount / biggest) * 100 : 0}%` }" />
+                </div>
+              </component>
+              <!-- Its subcategories: share of the category -->
+              <ul v-if="open.has(r.id)" class="grid gap-1.5 border-l pl-4">
+                <li v-for="p in r.parts" :key="p.id" class="flex items-baseline justify-between gap-3 text-xs">
+                  <span class="truncate text-muted-foreground">{{ p.name }}</span>
+                  <span class="shrink-0 tabular-nums">{{ money(p.amount) }} <span class="text-muted-foreground">· {{ Math.round(p.share * 100) }} %</span></span>
+                </li>
+              </ul>
             </li>
           </ul>
         </ChartCard>
@@ -374,7 +424,7 @@ const hasData = computed(() => transactions.value.length > 0)
             <button class="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-left hover:bg-accent" @click="editTransaction(t)">
               <span class="size-2.5 shrink-0 rounded-full" :style="{ background: categoryById.get(t.categoryId)?.color }" />
               <span class="min-w-0 flex-1">
-                <span class="block truncate">{{ categoryById.get(t.categoryId)?.name ?? '—' }}</span>
+                <span class="block truncate">{{ categoryPath(t.categoryId) }}</span>
                 <span class="block truncate text-xs text-muted-foreground">{{ shortDate(t.date) }}<template v-if="t.note"> · {{ t.note }}</template></span>
               </span>
               <span class="tabular-nums whitespace-nowrap" :class="t.type === 'income' ? 'text-income' : ''">
