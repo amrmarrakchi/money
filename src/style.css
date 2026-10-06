@@ -1,0 +1,97 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Flexo, in its light weight only: no bold anywhere */
+@font-face { font-family: "Flexo"; font-weight: 100 900; font-display: swap; src: url("/fonts/flexo.woff") format("woff"); }
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.99 0.002 150);
+  --foreground: oklch(0.2 0.01 150);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.01 150);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.01 150);
+  --primary: oklch(0.627 0.17 149.2);            /* #16a34a */
+  --primary-foreground: oklch(0.985 0.01 150);
+  --secondary: oklch(0.965 0.01 150);
+  --secondary-foreground: oklch(0.25 0.02 150);
+  --muted: oklch(0.965 0.006 150);
+  --muted-foreground: oklch(0.52 0.012 150);
+  --accent: oklch(0.955 0.025 150);
+  --accent-foreground: oklch(0.3 0.06 150);
+  --destructive: oklch(0.58 0.22 27);
+  --border: oklch(0.92 0.008 150);
+  --input: oklch(0.9 0.008 150);
+  --ring: oklch(0.627 0.17 149.2);
+  /* chart roles ( validated: green / violet pass the colour-blind checks in both modes ) */
+  --income: #16a34a;
+  --expense: #4a3aa7;
+  --chart-grid: oklch(0.92 0.006 150);
+  --chart-text: oklch(0.52 0.012 150);
+}
+
+.dark {
+  --background: oklch(0.165 0.008 150);
+  --foreground: oklch(0.95 0.006 150);
+  --card: oklch(0.2 0.009 150);
+  --card-foreground: oklch(0.95 0.006 150);
+  --popover: oklch(0.21 0.009 150);
+  --popover-foreground: oklch(0.95 0.006 150);
+  --primary: oklch(0.7 0.18 149.5);
+  --primary-foreground: oklch(0.18 0.03 150);
+  --secondary: oklch(0.26 0.01 150);
+  --secondary-foreground: oklch(0.95 0.006 150);
+  --muted: oklch(0.26 0.01 150);
+  --muted-foreground: oklch(0.7 0.012 150);
+  --accent: oklch(0.28 0.03 150);
+  --accent-foreground: oklch(0.95 0.006 150);
+  --destructive: oklch(0.65 0.2 25);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.7 0.18 149.5);
+  --income: #16a34a;
+  --expense: #9085e9;
+  --chart-grid: oklch(1 0 0 / 8%);
+  --chart-text: oklch(0.7 0.012 150);
+}
+
+@theme inline {
+  --font-sans: "Flexo", ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+  body { @apply bg-background text-foreground antialiased; font-family: var(--font-sans); }
+}
+
+/* Weight 100 everywhere, whatever a component asks for */
+*, *::before, *::after { font-weight: 100 !important; font-synthesis: none; }
