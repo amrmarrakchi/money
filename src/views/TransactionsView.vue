@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Transaction } from '@/lib/types'
-import { FilterX, Pencil, Plus, Search, Trash2 } from '@lucide/vue'
+import { FilterX, Pencil, Plus, Search, Trash2, X } from '@lucide/vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -26,19 +26,35 @@ const PERIODS: { value: Period, label: string }[] = [
   { value: 'custom', label: 'Custom dates' },
 ]
 
-const filters = reactive({ search: '', type: 'all', category: 'all', period: 'this-month' as Period, from: '', to: '' })
+const filters = reactive({ search: '', type: 'all', categories: [] as string[], period: 'this-month' as Period, from: '', to: '' })
 
 // Keep the chosen filters while moving between pages
-try { Object.assign(filters, JSON.parse(sessionStorage.getItem('money-filters') || '{}')) } catch {}
+try {
+  const saved = JSON.parse(sessionStorage.getItem('money-filters') || '{}')
+  Object.assign(filters, { ...saved, categories: Array.isArray(saved.categories) ? saved.categories : [] })
+}
+catch {}
 watch(filters, () => { try { sessionStorage.setItem('money-filters', JSON.stringify(filters)) } catch {} })
 
 const categoryOptions = computed(() => categories.value
   .filter(c => filters.type === 'all' || c.type === filters.type)
   .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name)))
 
+// Another type: only its categories stay chosen
 watch(() => filters.type, () => {
-  if (filters.category !== 'all' && !categoryOptions.value.some(c => c.id === filters.category)) filters.category = 'all'
+  filters.categories = filters.categories.filter(id => categoryOptions.value.some(c => c.id === id))
 })
+
+// Several categories can be chosen: the button says how many
+const chosen = computed(() => filters.categories.map(id => categoryById.value.get(id)).filter(c => !!c))
+const categoryLabel = computed(() => {
+  if (!chosen.value.length) return 'All categories'
+  if (chosen.value.length === 1) return chosen.value[0]!.name
+  return `${chosen.value.length} categories`
+})
+function removeCategory(id: string) {
+  filters.categories = filters.categories.filter(c => c !== id)
+}
 
 const range = computed<[string, string]>(() => {
   const now = today()
@@ -59,7 +75,7 @@ const filtered = computed(() => {
   return transactions.value
     .filter(t => t.date >= from && t.date <= to)
     .filter(t => filters.type === 'all' || t.type === filters.type)
-    .filter(t => filters.category === 'all' || t.categoryId === filters.category)
+    .filter(t => !filters.categories.length || filters.categories.includes(t.categoryId))
     .filter(t => !q || t.note.toLowerCase().includes(q) || (categoryById.value.get(t.categoryId)?.name.toLowerCase().includes(q)) || String(t.amount).includes(q))
     .sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
 })
@@ -71,9 +87,9 @@ const totals = computed(() => {
   return { income, expense, net: income - expense }
 })
 
-const isFiltered = computed(() => filters.search || filters.type !== 'all' || filters.category !== 'all' || filters.period !== 'this-month')
+const isFiltered = computed(() => filters.search || filters.type !== 'all' || filters.categories.length > 0 || filters.period !== 'this-month')
 function resetFilters() {
-  Object.assign(filters, { search: '', type: 'all', category: 'all', period: 'this-month', from: '', to: '' })
+  Object.assign(filters, { search: '', type: 'all', categories: [], period: 'this-month', from: '', to: '' })
 }
 
 // Long lists are shown 50 at a time
@@ -151,14 +167,17 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
             </SelectItem>
           </SelectContent>
         </Select>
-        <Select v-model="filters.category">
-          <SelectTrigger class="w-full" aria-label="Category">
-            <SelectValue />
+        <Select v-model="filters.categories" multiple>
+          <SelectTrigger class="w-full" aria-label="Categories">
+            <span class="truncate" :class="chosen.length ? '' : 'text-foreground'">{{ categoryLabel }}</span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">
-              All categories
-            </SelectItem>
+            <div class="flex items-center justify-between px-2 py-1.5 text-xs text-muted-foreground">
+              Choose one or more
+              <button v-if="filters.categories.length" type="button" class="text-primary hover:underline" @click="filters.categories = []">
+                Clear
+              </button>
+            </div>
             <SelectItem v-for="c in categoryOptions" :key="c.id" :value="c.id">
               <span class="size-2.5 rounded-full" :style="{ background: c.color }" />
               {{ c.name }}<span v-if="filters.type === 'all'" class="text-muted-foreground">· {{ c.type }}</span>
@@ -187,6 +206,15 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
             <Label for="f-to" class="text-xs text-muted-foreground">To</Label>
             <Input id="f-to" v-model="filters.to" type="date" />
           </div>
+        </div>
+        <div v-if="chosen.length > 1" class="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-5">
+          <span v-for="c in chosen" :key="c!.id" class="inline-flex items-center gap-1.5 rounded-full border bg-muted/50 py-1 pr-1 pl-2.5 text-xs">
+            <span class="size-2 rounded-full" :style="{ background: c!.color }" />
+            {{ c!.name }}
+            <button type="button" class="grid size-5 place-items-center rounded-full hover:bg-accent" :aria-label="`Remove ${c!.name}`" @click="removeCategory(c!.id)">
+              <X class="size-3" />
+            </button>
+          </span>
         </div>
       </CardContent>
     </Card>

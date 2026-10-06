@@ -43,7 +43,7 @@ The passwords are not stored: only a salted scrypt hash, in `server/api.js` ( `U
 | Page | What it does |
 | --- | --- |
 | Dashboard | The month in four figures ( income, expenses, net, savings rate, each against last month ); income and expenses over the last 12 months; where the money went ( expenses by category, ranked, with % ); spending pace ( spent so far this month, day by day, against last month ); savings over time; the latest transactions. The arrows change the month. Each chart can be shown as a table |
-| Transactions | Search ( note, category, amount ), filters by type, category and period ( this month, last month, last 3 months, this year, all, custom dates ); totals of what is shown; a table on wide screens, a list by day on phones. Edit and delete; deleting asks first |
+| Transactions | Search ( note, category, amount ), filters by type, one or more categories and period ( this month, last month, last 3 months, this year, all, custom dates ); totals of what is shown; a table on wide screens, a list by day on phones. Edit and delete; deleting asks first |
 | Categories | Expense and income categories, with their colour, number of transactions and total. A category with transactions can be deleted after choosing where its transactions go |
 
 Adding and editing always happen in a modal: **Add** in the header ( the green button at the bottom on phones ).
