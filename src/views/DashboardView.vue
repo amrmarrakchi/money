@@ -418,7 +418,7 @@ const hasData = computed(() => transactions.value.length > 0)
         </ChartCard>
       </div>
 
-      <ChartCard title="Latest transactions">
+      <ChartCard title="Latest transactions" v-if="false">
         <ul class="-mx-2 divide-y">
           <li v-for="t in latest" :key="t.id">
             <button class="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-left hover:bg-accent" @click="editTransaction(t)">

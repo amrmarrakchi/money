@@ -131,12 +131,7 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
 </script>
 
 <template>
-  <div class="grid grid-cols-1 gap-6">
-    <div class="flex flex-wrap items-end justify-between gap-3">
-      <p class="text-sm text-muted-foreground">
-        {{ filtered.length }} transaction{{ filtered.length === 1 ? '' : 's' }}
-      </p>
-    </div>
+  <div class="grid grid-cols-1 gap-4">
 
     <!-- Filters -->
     <Card class="py-4">
