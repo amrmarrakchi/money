@@ -11,6 +11,7 @@ export const router = createRouter({
       children: [
         { path: '', name: 'dashboard', component: () => import('@/views/DashboardView.vue'), meta: { title: 'Dashboard' } },
         { path: 'transactions', name: 'transactions', component: () => import('@/views/TransactionsView.vue'), meta: { title: 'Transactions' } },
+        { path: 'groceries', name: 'groceries', component: () => import('@/views/GroceriesView.vue'), meta: { title: 'Groceries' } },
         { path: 'categories', name: 'categories', component: () => import('@/views/CategoriesView.vue'), meta: { title: 'Categories' } },
       ],
     },

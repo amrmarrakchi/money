@@ -46,11 +46,14 @@ function load(user) {
       settings: { currency: 'MAD' },
       categories: DEFAULT_CATEGORIES.map(([type, name, color]) => ({ id: newId(), type, name, color })),
       transactions: [],
+      groceries: [],
     }
     save(user, data)
     return data
   }
-  return JSON.parse(fs.readFileSync(file, 'utf8'))
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'))
+  data.groceries ??= [] // files written before the grocery list existed
+  return data
 }
 
 // Written to a temporary file, then renamed: a crash never leaves half a file
@@ -129,6 +132,16 @@ function cleanCategory(body, data, id) {
   return { type, name, color, parentId }
 }
 
+const PRIORITIES = ['high', 'normal', 'low']
+
+function cleanGrocery(body, current) {
+  const name = String(body.name ?? current?.name ?? '').trim().slice(0, 100)
+  if (!name) throw new HttpError(400, 'Enter a name')
+  const priority = body.priority ?? current?.priority ?? 'normal'
+  if (!PRIORITIES.includes(priority)) throw new HttpError(400, 'Priority must be high, normal or low')
+  return { name, priority }
+}
+
 // A category and its subcategories
 function family(data, id) {
   return [id, ...data.categories.filter(c => c.parentId === id).map(c => c.id)]
@@ -176,6 +189,32 @@ function route(method, url, user, body) {
     }
     if (method === 'DELETE') {
       data.transactions.splice(index, 1)
+      save(user, data)
+      return { deleted: id }
+    }
+  }
+
+  if (resource === 'groceries') {
+    if (method === 'POST' && !id) {
+      const g = { id: newId(), ...cleanGrocery(body), done: false, createdAt: new Date().toISOString() }
+      data.groceries.push(g)
+      save(user, data)
+      return g
+    }
+    const index = data.groceries.findIndex(g => g.id === id)
+    if (index < 0) throw new HttpError(404, 'This item no longer exists')
+    if (method === 'PUT') {
+      const g = { ...data.groceries[index], ...cleanGrocery(body, data.groceries[index]) }
+      if (typeof body.done === 'boolean' && body.done !== g.done) {
+        g.done = body.done
+        g.doneAt = body.done ? new Date().toISOString() : null
+      }
+      data.groceries[index] = g
+      save(user, data)
+      return g
+    }
+    if (method === 'DELETE') {
+      data.groceries.splice(index, 1)
       save(user, data)
       return { deleted: id }
     }

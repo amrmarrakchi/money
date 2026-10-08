@@ -1,5 +1,5 @@
 // The signed-in user and their data, shared by every page
-import type { Category, Kind, Settings, Transaction, User, UserData } from './types'
+import type { Category, Grocery, Kind, Priority, Settings, Transaction, User, UserData } from './types'
 import { computed, reactive } from 'vue'
 import { api, ApiError, getToken, setToken } from './api'
 
@@ -13,6 +13,7 @@ export const state = reactive<State>({ user: null, data: null, loading: false })
 
 export const categories = computed(() => state.data?.categories ?? [])
 export const transactions = computed(() => state.data?.transactions ?? [])
+export const groceries = computed(() => state.data?.groceries ?? [])
 export const currency = computed(() => state.data?.settings.currency ?? 'MAD')
 export const categoryById = computed(() => new Map(categories.value.map(c => [c.id, c])))
 
@@ -126,4 +127,30 @@ export async function deleteCategory(id: string, moveTo?: string) {
 
 export async function saveSettings(settings: Settings) {
   state.data!.settings = await api<Settings>('PUT', 'settings', settings)
+}
+
+// ---------------------------------------------------------------- grocery list
+export async function addGrocery(name: string, priority: Priority = 'normal') {
+  const saved = await api<Grocery>('POST', 'groceries', { name, priority })
+  ;(state.data!.groceries ??= []).push(saved)
+  return saved
+}
+
+// Shown at once, put back if the server refuses
+export async function updateGrocery(item: Grocery, changes: Partial<Pick<Grocery, 'name' | 'priority' | 'done'>>) {
+  const before = { ...item }
+  Object.assign(item, changes, 'done' in changes ? { doneAt: changes.done ? new Date().toISOString() : null } : {})
+  try {
+    Object.assign(item, await api<Grocery>('PUT', `groceries/${item.id}`, changes))
+  }
+  catch (e) {
+    Object.assign(item, before)
+    throw e
+  }
+}
+
+export async function deleteGrocery(id: string) {
+  await api('DELETE', `groceries/${id}`)
+  const list = state.data!.groceries!
+  list.splice(list.findIndex(g => g.id === id), 1)
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeftRight, LayoutDashboard, LogOut, Plus, Settings2, Tags } from '@lucide/vue'
+import { ArrowLeftRight, LayoutDashboard, ListChecks, LogOut, Plus, Settings2, Tags } from '@lucide/vue'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ const route = useRoute()
 const links = [
   { to: '/', name: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/transactions', name: 'transactions', label: 'Transactions', icon: ArrowLeftRight },
+  { to: '/groceries', name: 'groceries', label: 'Groceries', icon: ListChecks },
   { to: '/categories', name: 'categories', label: 'Categories', icon: Tags },
 ]
 const title = computed(() => String(route.meta.title ?? ''))
@@ -104,7 +105,7 @@ function signOut() {
     <div class="mx-auto mt-3 hidden h-1.5 w-28 rounded-full bg-white/25 md:block" aria-hidden="true" />
 
     <!-- Phones: the tab bar floats at the bottom -->
-    <nav class="glass-thick fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 grid grid-cols-3 gap-1 rounded-full p-1.5 md:hidden" aria-label="Pages">
+    <nav class="glass-thick fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 grid grid-cols-4 gap-1 rounded-full p-1.5 md:hidden" aria-label="Pages">
       <RouterLink
         v-for="link in links"
         :key="link.to"

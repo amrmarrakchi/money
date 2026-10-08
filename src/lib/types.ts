@@ -19,6 +19,17 @@ export interface Transaction {
   updatedAt?: string
 }
 
+export type Priority = 'high' | 'normal' | 'low'
+
+export interface Grocery {
+  id: string
+  name: string
+  priority: Priority
+  done: boolean
+  doneAt?: string | null
+  createdAt?: string
+}
+
 export interface Settings {
   currency: string
 }
@@ -27,6 +38,7 @@ export interface UserData {
   settings: Settings
   categories: Category[]
   transactions: Transaction[]
+  groceries?: Grocery[]
 }
 
 export interface User {
