@@ -154,5 +154,5 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opaci
 
 
 body::before {
-    background: #1b1e1b;
+    background: linear-gradient(150deg, black, #525f56)
 }
