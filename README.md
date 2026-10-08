@@ -1,42 +1,67 @@
 # Money
 
-A simple, personal expense tracker: expenses and incomes, their categories and subcategories, filters, and a dashboard with charts.
-Two accounts, each with its own data. Vue 3 + Vite, shadcn-vue ( Reka UI + Tailwind CSS 4 ), Chart.js.
+A simple, personal expense tracker: expenses and incomes, their categories and subcategories, filters, a dashboard with charts, and a grocery list.
+Two accounts, each with its own data. Frontend: Vue 3 + Vite, shadcn-vue ( Reka UI + Tailwind CSS 4 ), Chart.js.
+Backend: a Laravel API ( `backend/` ) with a database, serving the frontend too: **one domain** for both.
 
-## Start
+```
+money/
+  src/        the frontend ( Vue )
+  backend/    the Laravel app: the API, the database, and the built frontend in backend/public
+```
+
+## Develop
 
 ```bash
+# backend ( once )
+cd backend
+composer install
+cp .env.example .env && php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed       # creates the tables and the accounts amr and sakina
+php artisan serve                # http://127.0.0.1:8000  ( the API )
+
+# frontend ( another terminal, at the project root )
 npm install
-npm run dev          # http://localhost:5173
+npm run dev                      # http://localhost:5173  ( /api is forwarded to the Laravel server )
 ```
 
-Sign in with **amr** or **sakina**, password **1234**.
+Sign in with **amr** or **sakina**, password **1234** ( or the `MONEY_AMR_PASSWORD` / `MONEY_SAKINA_PASSWORD` set in `backend/.env` before seeding ).
+To try the app with example data: `php artisan money:demo amr` ( six months of example transactions; it refuses an account that has some ).
 
-To run it without Vite ( on a home server, a NAS … ):
+## Deploy ( one domain )
 
 ```bash
-npm run build
-npm start            # http://127.0.0.1:4173   ( PORT=… HOST=0.0.0.0 npm start to change it )
+npm ci && npm run build          # writes the frontend into backend/public ( index.html, assets/, fonts/ )
 ```
 
-To try the app with example data: `npm run demo -- amr` ( or `sakina` ). It writes six months of example transactions,
-and refuses an account that already has transactions.
+Then put the `backend/` folder on a PHP 8.3+ host and point the domain's **document root to `backend/public`**:
+
+```bash
+cd backend
+composer install --no-dev --optimize-autoloader
+cp .env.example .env && php artisan key:generate
+#   in .env:  APP_ENV=production  APP_DEBUG=false  APP_URL=https://your-domain
+#             MONEY_AMR_PASSWORD=…  MONEY_SAKINA_PASSWORD=…   ( before the seed )
+touch database/database.sqlite   # or use MySQL / PostgreSQL: set the DB_* values in .env
+php artisan migrate --force && php artisan db:seed --force
+```
+
+`storage/` and `bootstrap/cache/` must be writable by the web server; with SQLite, so must `database/` and `database.sqlite`.
+Laravel answers `/api/*`; any other page that is not a file in `backend/public` gets the frontend's `index.html`.
+Run `php artisan optimize` after each deploy.
 
 ## Data
 
-Everything is kept in JSON files on the computer that runs the app, one per user:
+Everything is in the database ( SQLite by default: `backend/database/database.sqlite`; back it up by copying the file ).
+Tables: `users`, `categories`, `transactions`, `groceries`, `personal_access_tokens` ( the sign-in tokens, 30 days ).
+The passwords are stored hashed ( bcrypt ). Sign-in is rate limited ( 10 tries a minute ).
 
+Coming from the old JSON version ( `data/amr.json`, `data/sakina.json` )? After `migrate --seed`:
+
+```bash
+php artisan money:import-json /path/to/data
 ```
-data/amr.json        { settings, categories, transactions }
-data/sakina.json
-data/.secret         signs the sign-in tokens ( made on first start )
-```
-
-`data/` is in `.gitignore`: your figures never go to GitHub. To back up, copy the folder; to move to another
-computer, copy it next to the app. `MONEY_DATA_DIR=/path npm start` keeps it elsewhere.
-Each file is written to a temporary file then renamed, so a crash never leaves half a file.
-
-The passwords are not stored: only a salted scrypt hash, in `server/api.js` ( `USERS` ). A sign-in lasts 30 days.
 
 ## Pages
 
@@ -44,6 +69,7 @@ The passwords are not stored: only a salted scrypt hash, in `server/api.js` ( `U
 | --- | --- |
 | Dashboard | The month in four figures ( income, expenses, net, savings rate, each against last month ); income and expenses over the last 12 months; where the money went ( expenses by category, ranked, with % ; a category opens to show its subcategories ); spending pace ( spent so far this month, day by day, against last month ); savings over time; the latest transactions. The arrows change the month. Each chart can be shown as a table |
 | Transactions | Search ( note, category, amount ), filters by type, one or more categories ( a category takes its subcategories with it ) and period ( this month, last month, last 3 months, this year, all, custom dates ); totals of what is shown; a table on wide screens, a list by day on phones. Edit and delete; deleting asks first |
+| Groceries | A to-buy list with checkboxes. Type a name and press Enter to add ( priority Normal unless you click the chip: High, Normal, Low ). Sort by priority or last added. A ticked item moves to the archive below, faded; unticking it puts it back |
 | Categories | Expense and income categories, each with its subcategories ( one level: Transport › Fuel ). A subcategory has the type and colour of its category; it can move to another category or become a category. Number of transactions and total, a category counting its subcategories. Deleting a category deletes its subcategories, after choosing where their transactions go |
 
 A transaction can go on a category or on one of its subcategories. Adding and editing always happen in a modal: **Add** in the header ( the green button at the bottom on phones ).
@@ -64,14 +90,15 @@ The look of visionOS, dark only:
   colour-blind people; amounts in text use lighter steps of the same two colours. The change against last month is
   written in words, not only shown in colour.
 
-## API ( server/api.js )
+## API ( backend/routes/api.php )
 
 | Method | URL | Body | Returns |
 | --- | --- | --- | --- |
 | POST | `/api/login` | `{ username, password }` | `{ token, user }` |
-| GET | `/api/me` · `/api/data` | | the user · `{ settings, categories, transactions }` |
-| POST · PUT · DELETE | `/api/transactions` · `/api/transactions/:id` | `{ type, amount, categoryId, date, note }` | the transaction |
-| POST · PUT · DELETE | `/api/categories` · `/api/categories/:id` | `{ type, name, color, parentId }` · DELETE `{ moveTo }` | the category ( `parentId`: a subcategory ) |
+| GET | `/api/me` · `/api/data` | | the user · `{ settings, categories, transactions, groceries }` |
+| POST · PUT · DELETE | `/api/transactions` · `/api/transactions/{id}` | `{ type, amount, categoryId, date, note }` | the transaction |
+| POST · PUT · DELETE | `/api/categories` · `/api/categories/{id}` | `{ type, name, color, parentId }` · DELETE `{ moveTo }` | the category ( `parentId`: a subcategory ) |
+| POST · PUT · DELETE | `/api/groceries` · `/api/groceries/{id}` | `{ name, priority, done }` ( PUT: any of them ) | the item |
 | PUT | `/api/settings` | `{ currency }` | the settings |
 
-Every call but the sign-in needs `Authorization: Bearer <token>`.
+Every call but the sign-in needs `Authorization: Bearer <token>` ( Laravel Sanctum ). Errors are `{ "error": "message" }`.
