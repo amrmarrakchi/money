@@ -130,14 +130,14 @@ export async function saveSettings(settings: Settings) {
 }
 
 // ---------------------------------------------------------------- grocery list
-export async function addGrocery(name: string, priority: Priority = 'normal') {
-  const saved = await api<Grocery>('POST', 'groceries', { name, priority })
+export async function addGrocery(name: string, priority: Priority = 'normal', price: number | null = null) {
+  const saved = await api<Grocery>('POST', 'groceries', { name, priority, price })
   ;(state.data!.groceries ??= []).push(saved)
   return saved
 }
 
 // Shown at once, put back if the server refuses
-export async function updateGrocery(item: Grocery, changes: Partial<Pick<Grocery, 'name' | 'priority' | 'done'>>) {
+export async function updateGrocery(item: Grocery, changes: Partial<Pick<Grocery, 'name' | 'priority' | 'price' | 'done'>>) {
   const before = { ...item }
   Object.assign(item, changes, 'done' in changes ? { doneAt: changes.done ? new Date().toISOString() : null } : {})
   try {

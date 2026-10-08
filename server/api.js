@@ -139,7 +139,11 @@ function cleanGrocery(body, current) {
   if (!name) throw new HttpError(400, 'Enter a name')
   const priority = body.priority ?? current?.priority ?? 'normal'
   if (!PRIORITIES.includes(priority)) throw new HttpError(400, 'Priority must be high, normal or low')
-  return { name, priority }
+  // The price is optional: empty or null means none
+  const raw = 'price' in body ? body.price : current?.price
+  const price = raw === null || raw === undefined || raw === '' ? null : Math.round(Number(raw) * 100) / 100
+  if (price !== null && (!Number.isFinite(price) || price < 0)) throw new HttpError(400, 'The price must be 0 or more')
+  return { name, priority, price }
 }
 
 // A category and its subcategories
