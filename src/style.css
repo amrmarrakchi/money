@@ -151,3 +151,8 @@
 
 /* The calendar icon of date fields, in white */
 input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; }
+
+
+body::before {
+    background: linear-gradient(150deg, black, #525f56)
+}
