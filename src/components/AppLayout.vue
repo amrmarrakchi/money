@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeftRight, LayoutDashboard, ListChecks, LogOut, Plus, Settings2, Tags } from '@lucide/vue'
+import { ArrowLeftRight, LayoutDashboard, ListChecks, ListFilter, LogOut, Plus, Settings2, Tags } from '@lucide/vue'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { addTransaction, settingsDialog } from '@/lib/dialogs'
+import { addTransaction, filtersOpen, settingsDialog } from '@/lib/dialogs'
 import { logout, state } from '@/lib/store'
 import CategoryDialog from './CategoryDialog.vue'
 import SettingsDialog from './SettingsDialog.vue'
@@ -68,6 +68,17 @@ function signOut() {
         <div class="ml-auto flex items-center gap-2">
           <Button class="hidden sm:inline-flex" @click="addTransaction()">
             <Plus /> Add
+          </Button>
+          <Button
+            v-if="route.name === 'transactions'"
+            :variant="filtersOpen ? 'default' : 'secondary'"
+            size="icon"
+            class="sm:hidden"
+            aria-label="Filters"
+            :aria-pressed="filtersOpen"
+            @click="filtersOpen = !filtersOpen"
+          >
+            <ListFilter />
           </Button>
           <Button size="icon" class="sm:hidden" aria-label="Add" @click="addTransaction()">
             <Plus />

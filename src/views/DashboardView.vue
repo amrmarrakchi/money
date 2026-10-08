@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { baseOptions, colors } from '@/lib/charts'
 import { addTransaction, editTransaction } from '@/lib/dialogs'
 import { addMonths, money, monthKey, monthLabel, shortDate, today } from '@/lib/format'
-import { categoryById, categoryPath, currency, state, topCategoryId, transactions } from '@/lib/store'
+import { categoryById, categoryPath, currency, topCategoryId, transactions } from '@/lib/store'
 import { dark } from '@/lib/theme'
 
 const thisMonth = monthKey(today())
@@ -228,15 +228,7 @@ const hasData = computed(() => transactions.value.length > 0)
 
 <template>
   <div class="grid grid-cols-1 gap-6">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h1 class="text-2xl tracking-tight">
-          Hello, {{ state.user?.name }}
-        </h1>
-        <p class="text-sm text-muted-foreground">
-          Your money in {{ monthLabel(month) }}
-        </p>
-      </div>
+    <div class="flex flex-wrap items-center justify-end gap-3">
       <div class="glass-recessed flex items-center gap-1 rounded-full p-1">
         <Button variant="ghost" size="icon-sm" aria-label="Previous month" @click="month = addMonths(month, -1)">
           <ChevronLeft />

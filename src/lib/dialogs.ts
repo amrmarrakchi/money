@@ -1,6 +1,6 @@
 // The add / edit modals, opened from any page
 import type { Category, Kind, Transaction } from './types'
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 
 export const transactionDialog = reactive<{ open: boolean, editing: Transaction | null, type: Kind }>({
   open: false,
@@ -49,3 +49,6 @@ export function editCategory(c: Category) {
 }
 
 export const settingsDialog = reactive({ open: false })
+
+// Phones: the filters of the transactions page are hidden until the button in the header opens them
+export const filtersOpen = ref(false)

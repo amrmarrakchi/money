@@ -25,7 +25,6 @@ export interface Grocery {
   id: string
   name: string
   priority: Priority
-  price?: number | null // optional
   done: boolean
   doneAt?: string | null
   createdAt?: string

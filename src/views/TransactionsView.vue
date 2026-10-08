@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { addTransaction, editTransaction } from '@/lib/dialogs'
+import { addTransaction, editTransaction, filtersOpen } from '@/lib/dialogs'
 import { showError } from '@/lib/errors'
 import { addMonths, isoDate, money, monthKey, shortDate, today } from '@/lib/format'
 import { categoryById, categoryPath, categoryTree, deleteTransaction, familyOf, transactions } from '@/lib/store'
@@ -34,6 +34,7 @@ try {
   Object.assign(filters, { ...saved, categories: Array.isArray(saved.categories) ? saved.categories : [] })
 }
 catch {}
+if (!PERIODS.some(p => p.value === filters.period)) filters.period = 'this-month'
 watch(filters, () => { try { sessionStorage.setItem('money-filters', JSON.stringify(filters)) } catch {} })
 
 // Each category followed by its subcategories
@@ -139,7 +140,7 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
     </div>
 
     <!-- Filters -->
-    <Card class="py-4">
+    <Card class="py-4" :class="filtersOpen ? '' : 'max-sm:hidden'">
       <CardContent class="grid gap-3 px-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(3,1fr)_auto]">
         <div class="relative">
           <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -181,7 +182,7 @@ const dayLabel = (iso: string) => iso === today() ? 'Today' : iso === isoDate(ne
         </Select>
         <Select v-model="filters.period">
           <SelectTrigger class="w-full" aria-label="Period">
-            <SelectValue />
+            <span class="truncate">{{ PERIODS.find(p => p.value === filters.period)?.label ?? 'This month' }}</span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem v-for="p in PERIODS" :key="p.value" :value="p.value">
