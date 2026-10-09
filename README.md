@@ -47,6 +47,9 @@ touch database/database.sqlite   # or use MySQL / PostgreSQL: set the DB_* value
 php artisan migrate --force && php artisan db:seed --force
 ```
 
+If your host's document root is the `backend/` folder itself and cannot be changed, keep the `backend/.htaccess` file ( Apache ):
+it hands every request to `public/` and hides everything else ( `.env`, `app/`, `vendor/`, `storage/` … ).
+
 `storage/` and `bootstrap/cache/` must be writable by the web server; with SQLite, so must `database/` and `database.sqlite`.
 Laravel answers `/api/*`; any other page that is not a file in `backend/public` gets the frontend's `index.html`.
 Run `php artisan optimize` after each deploy.

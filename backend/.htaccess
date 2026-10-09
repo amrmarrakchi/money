@@ -1,0 +1,21 @@
+# For a host whose document root is this folder ( the Laravel app ) and cannot be pointed to public/.
+# Every request is handed to public/, so app/, vendor/, .env, storage/ … are never reachable from the web.
+# If your host lets you set the document root to backend/public, you do not need this file.
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Keep the Authorization header ( the sign-in token ) on hosts that drop it
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Never serve hidden files ( .env, .git … ), whatever happens below
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+    # Everything else goes to public/ ( once: a path already starting with /public/ is left to public/.htaccess,
+    # which sends what is not a file to index.php: the API and the pages of the app )
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
