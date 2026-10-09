@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['type', 'name', 'color', 'parent_id'])]
 class Category extends Model
 {
     use HasUuids;
+
+    protected $fillable = ['type', 'name', 'color', 'parent_id'];
 
     // The shape the frontend reads
     public function toApi(): array

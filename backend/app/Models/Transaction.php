@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['type', 'amount', 'category_id', 'date', 'note'])]
 class Transaction extends Model
 {
     use HasUuids;
+
+    protected $fillable = ['type', 'amount', 'category_id', 'date', 'note'];
 
     protected function casts(): array
     {

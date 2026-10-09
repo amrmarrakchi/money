@@ -35,7 +35,7 @@ To try the app with example data: `php artisan money:demo amr` ( six months of e
 npm ci && npm run build          # writes the frontend into backend/public ( index.html, assets/, fonts/ )
 ```
 
-Then put the `backend/` folder on a PHP 8.3+ host and point the domain's **document root to `backend/public`**:
+Then put the `backend/` folder on a PHP 8.2+ host and point the domain's **document root to `backend/public`**:
 
 ```bash
 cd backend

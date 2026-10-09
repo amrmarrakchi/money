@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['name', 'priority', 'done', 'done_at'])]
 class Grocery extends Model
 {
     use HasUuids;
+
+    protected $fillable = ['name', 'priority', 'done', 'done_at'];
 
     protected function casts(): array
     {

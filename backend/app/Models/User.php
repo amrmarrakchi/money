@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['username', 'name', 'password', 'currency'])]
-#[Hidden(['password'])]
 class User extends Authenticatable
 {
     use HasApiTokens;
+
+    protected $fillable = ['username', 'name', 'password', 'currency'];
+
+    protected $hidden = ['password'];
 
     // The categories every account starts with: [type, name, colour]
     public const DEFAULT_CATEGORIES = [
